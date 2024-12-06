@@ -1,13 +1,29 @@
 // main.js
-import redisClient from './utils/redis';
+import dbClient from './utils/db';
 
-redisClient.client.on('ready', async () => {
-    console.log(redisClient.isAlive()); // Devrait retourner true après la connexion
-    console.log(await redisClient.get('myKey')); // Devrait afficher null (la clé n'existe pas encore)
-    await redisClient.set('myKey', 12, 5); // Stocker la valeur 12 pendant 5 secondes
-    console.log(await redisClient.get('myKey')); // Devrait afficher 12
+const waitConnection = () => {
+    return new Promise((resolve, reject) => {
+        let i = 0;
+        const repeatFct = async () => {
+            setTimeout(() => {
+                i += 1;
+                if (i >= 10) {
+                    reject();
+                } else if (!dbClient.isAlive()) {
+                    repeatFct();
+                } else {
+                    resolve();
+                }
+            }, 1000);
+        };
+        repeatFct();
+    });
+};
 
-    setTimeout(async () => {
-        console.log(await redisClient.get('myKey')); // Devrait afficher null après 10 secondes (car la clé expire après 5 sec)
-    }, 1000 * 10);
-});
+(async () => {
+    console.log(dbClient.isAlive()); // Devrait afficher false tant que MongoDB n'est pas connecté
+    await waitConnection();
+    console.log(dbClient.isAlive()); // Devrait afficher true une fois connecté
+    console.log(await dbClient.nbUsers()); // Affiche le nombre d'utilisateurs dans la collection
+    console.log(await dbClient.nbFiles()); // Affiche le nombre de fichiers dans la collection
+})();
