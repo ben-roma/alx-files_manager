@@ -1,52 +1,50 @@
 // utils/redis.js
 
 import { createClient } from 'redis';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 class RedisClient {
   constructor() {
-    this.client = createClient(); // Création du client Redis
-    this.client.on('error', (err) => console.error('Redis client error:', err)); // Gestion des erreurs
-    this.client.on('ready', () => console.log('Redis client connected')); // Message de confirmation
+    const host = process.env.REDIS_HOST || '127.0.0.1';
+    const port = process.env.REDIS_PORT || 6379;
+    this.client = createClient({ url: `redis://${host}:${port}` });
+
+    this.client.on('error', (err) => console.error('Redis client error:', err));
+    this.client.on('connect', () => console.log('Redis client connected'));
+    this.client.connect().catch((err) => console.error('Connection error:', err));
   }
 
   isAlive() {
-    return this.client.connected; // Vérifie si le client est connecté
+    return this.client.isOpen;  // Vérifie si le client Redis est connecté
   }
 
   async get(key) {
-    return new Promise((resolve, reject) => {
-      this.client.get(key, (err, value) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(value);
-        }
-      });
-    });
+    try {
+      return await this.client.get(key); // Récupère la valeur de Redis
+    } catch (error) {
+      console.error('Error getting value:', error);
+      return null;
+    }
   }
 
   async set(key, value, duration) {
-    return new Promise((resolve, reject) => {
-      this.client.setex(key, duration, value, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
+    try {
+      await this.client.set(key, value, {
+        EX: duration, // Définit une expiration en secondes
       });
-    });
+    } catch (error) {
+      console.error('Error setting value:', error);
+    }
   }
 
   async del(key) {
-    return new Promise((resolve, reject) => {
-      this.client.del(key, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
+    try {
+      await this.client.del(key); // Supprime la clé de Redis
+    } catch (error) {
+      console.error('Error deleting value:', error);
+    }
   }
 }
 
