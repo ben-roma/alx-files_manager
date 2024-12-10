@@ -20,7 +20,7 @@ class DBClient {
     this.client.connect()
       .then(() => {
         console.log('MongoDB client connected');
-        this.database = this.client.db(database); // Initialiser la base de données une fois connecté
+        this.database = this.client.db(database);
       })
       .catch((err) => console.error('MongoDB connection error:', err));
   }
