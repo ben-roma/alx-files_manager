@@ -1,20 +1,15 @@
-// server.js
-
 import express from 'express';
-import dotenv from 'dotenv';
-import routes from './routes/index';
-
-dotenv.config();
+import controllerRouting from './routes/index';
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middleware pour analyser le corps des requêtes JSON
 app.use(express.json());
 
-// Charger toutes les routes depuis le fichier index.js
-app.use('/', routes);
+controllerRouting(app);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+export default app;
